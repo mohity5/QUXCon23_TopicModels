@@ -9,6 +9,9 @@ library('quanteda')
 library('quanteda.textstats')
 library('stopwords')
 
+#For model fitting
+library('topicmodels')
+
 
 ```
 
@@ -98,4 +101,61 @@ dim(dfm_matrix_test)
 dfm_matrix_test <- dfm_trim(dfm_matrix_test, min_termfreq = 15, max_termfreq = round(length(temp_dat) * 0.07))
 dim(dfm_matrix_test)
 dfm_matrix_tm_test <- convert(dfm_matrix_test, to = 'topicmodels')
+```
+
+
+### Model Fitting
+
+```{r}
+dfm_matrix_tm <- convert(dfm_matrix, to = 'topicmodels')
+```
+
+
+```{r-ModelFitting}
+start <- Sys.time()
+model_lda_20 <- LDA(dfm_matrix_tm, 
+                    k = 20, method = 'Gibbs', 
+                    control = list(alpha = 0.08, burnin = 500 , verbose = 100 , seed = 1234))
+stop <- Sys.time()
+
+print(stop-start)
+saveRDS(model_lda_20,'./Models/model_lda_20.rds')
+model_lda_20 <- readRDS('./Models/model_lda_20.rds')
+```
+
+```{r-ModelFitting}
+start <- Sys.time()
+model_lda_21 <- LDA(dfm_matrix_tm, 
+                    k = 21, method = 'Gibbs', 
+                    control = list(alpha = 0.08, burnin = 500 , verbose = 100 , seed = 1234))
+stop <- Sys.time()
+
+print(stop-start)
+saveRDS(model_lda_21,'./Models/model_lda_21.rds')
+model_lda_21 <- readRDS('./Models/model_lda_21.rds')
+```
+
+```{r-ModelFitting}
+start <- Sys.time()
+model_lda_45 <- LDA(dfm_matrix_tm, 
+                    k = 45, method = 'Gibbs', 
+                    control = list(alpha = 0.08, burnin = 500 , verbose = 100 , seed = 1234))
+stop <- Sys.time()
+
+print(stop-start)
+saveRDS(model_lda_45,'./Models/model_lda_45.rds')
+model_lda_45 <- readRDS('./Models/model_lda_45.rds')
+```
+
+
+```{r-ModelFitting}
+start <- Sys.time()
+model_lda_21_a12 <- LDA(dfm_matrix_tm, 
+                    k = 21, method = 'Gibbs', 
+                    control = list(alpha = 1.2, burnin = 500 , verbose = 100 , seed = 1234))
+stop <- Sys.time()
+
+print(stop-start)
+saveRDS(model_lda_21_a12,'./Models/model_lda_21_a12.rds')
+model_lda_21_a12 <- readRDS('./Models/model_lda_21_a12.rds')
 ```
