@@ -13,6 +13,8 @@ library('stopwords')
 library('topicmodels')
 library('topicdoc')
 
+#For visualisation
+library('LDAvis')
 
 
 ```
@@ -226,4 +228,34 @@ mean(topic_diagnostics(model_lda_20,dfm_matrix_tm)$topic_coherence)
 mean(topic_diagnostics(model_lda_21,dfm_matrix_tm)$topic_coherence)
 mean(topic_diagnostics(model_lda_45,dfm_matrix_tm)$topic_coherence)
 
+```
+
+### Model Visualisation
+
+```{r-JSON_prep}
+
+jsonPrep <- function(modl, dfmm){
+
+    modl <- model_lda_21
+
+    phi <- exp(modl@beta) #Topic over terms
+    theta <- modl@gamma #Doc over topics
+    vocab <- modl@terms
+
+    termFreq <- unlist(colSums(dfmm), use.names = FALSE)
+    
+    docL <- unlist(rowSums(dfmm), use.names = FALSE)
+    docL <- docL[!(docL %in% 0)]
+
+    json <- createJSON(phi,theta,docL,vocab,termFreq)
+
+    return(json)
+
+}
+
+```
+
+```{r}
+json <- jsonPrep(model_lda_21,dfm_matrix)
+serVis(json)
 ```
