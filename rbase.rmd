@@ -11,6 +11,8 @@ library('stopwords')
 
 #For model fitting
 library('topicmodels')
+library('topicdoc')
+
 
 
 ```
@@ -158,4 +160,70 @@ stop <- Sys.time()
 print(stop-start)
 saveRDS(model_lda_21_a12,'./Models/model_lda_21_a12.rds')
 model_lda_21_a12 <- readRDS('./Models/model_lda_21_a12.rds')
+```
+
+### Model Evaluation
+
+#### Word Intrusion
+```{r}
+terms(model_lda_21,10)
+Topic2Names <- c('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21')
+
+```
+
+
+#### Topic Intrusion
+```{r-TopicsInDocuments}
+
+TopicInDoc <- function(mod,docNum, topicLabels){
+    TopicDocDist <- as.data.frame(mod@gamma)
+    colnames(TopicDocDist) <- topicLabels
+    #barplot(unlist(TopicDocDist[docn,]))
+    
+    #Print top 3 topic names
+    temp <- t(TopicDocDist[docNum,])
+    temp <- temp[order(temp,decreasing = TRUE),]
+    head(temp,3)
+}
+
+```
+
+```{r}
+docnum = 520
+
+writeLines(df[docnum,])
+TopicInDoc(model_lda_21,docnum,Topic2Names)
+```
+
+
+#### Perplexity
+
+```{r}
+#model_list <- list(model_20,model_21)
+perplexity_20 <- perplexity(model_lda_20, dfm_matrix_tm_test)
+perplexity_21 <- perplexity(model_lda_21, dfm_matrix_tm_test)
+perplexity_45 <- perplexity(model_lda_45, dfm_matrix_tm_test)
+
+#perplexity_45 <- perplexity(model_lda_45, dfm_matrix_tm_test)
+
+print('Perplexity of model 20 topics is ', perplexity_20) #use theta
+print('Perplexity of model 21 topics is ', perplexity_21) #use theta
+print('Perplexity of model 45 topics is ', perplexity_45) #use theta
+
+```
+
+
+
+#### Coherence
+
+```{r}
+topic_diagnostics(model_lda_20,dfm_matrix_tm)
+topic_diagnostics(model_lda_21,dfm_matrix_tm)
+topic_diagnostics(model_lda_45,dfm_matrix_tm)
+
+
+mean(topic_diagnostics(model_lda_20,dfm_matrix_tm)$topic_coherence)
+mean(topic_diagnostics(model_lda_21,dfm_matrix_tm)$topic_coherence)
+mean(topic_diagnostics(model_lda_45,dfm_matrix_tm)$topic_coherence)
+
 ```
