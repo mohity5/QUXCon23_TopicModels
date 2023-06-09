@@ -1,0 +1,101 @@
+# Topic Models
+## A tool for uncovering hidden themes in data
+### QUXCon 2023
+
+
+```{r-Libraries}
+#For Text pre-processing
+library('quanteda')
+library('quanteda.textstats')
+library('stopwords')
+
+
+```
+
+### Data Loading
+```{r-ReadingData}
+df <- read.csv('./Data/lemmatised_text.csv')
+dim(df)
+
+```
+
+```{r-SplittingTestTrainData}
+train_doc_n = 0.85 * dim(df)[1]
+
+train_data <- df[0:(round(train_doc_n)-1),] 
+test_data <- df[round(train_doc_n):dim(df)[1],]
+temp_dat <- df[0:1000,]
+
+
+```
+
+
+### Pre-processing
+
+#### For training data
+
+```{r-Tokenising}
+start <- Sys.time()
+print(start)
+
+toks <- tokens(train_data,
+                remove_punct = TRUE,
+                remove_numbers = TRUE) #,split_hyphens = TRUE
+
+
+toks <- tokens_select(toks, min_nchar = 3 , selection = 'remove')
+toks <- tokens_remove(toks, stopwords(language = 'en', source = 'stopwords-iso'))
+toks <- tokens_select(toks, '-' , selection = 'remove')
+
+
+toks_col <- tokens_select(toks) %>% textstat_collocations(min_count = 100)
+toks <- tokens_compound(toks, pattern = toks_col)
+
+
+stop <- Sys.time()
+print(stop - start)
+```
+
+```{r-DocFreqMatrix}
+dfm_matrix <- dfm(toks)
+dim(dfm_matrix)
+```
+
+```{r}
+dfm_matrix <- dfm_trim(dfm_matrix, min_termfreq = 25, max_termfreq = round(length(train_data) * 0.07))
+dim(dfm_matrix)
+
+```
+
+#### For testing data
+```{r}
+start <- Sys.time()
+print(start)
+
+toks_test <- tokens(test_data,
+                remove_punct = TRUE,
+                remove_numbers = TRUE) #,split_hyphens = TRUE
+
+
+toks_test <- tokens_select(toks_test, min_nchar = 3 , selection = 'remove')
+toks_test <- tokens_remove(toks_test, stopwords(language = 'en', source = 'stopwords-iso'))
+toks_test <- tokens_select(toks_test, '-' , selection = 'remove')
+
+
+toks_col <- tokens_select(toks_test) %>% textstat_collocations(min_count = 100)
+toks_test <- tokens_compound(toks_test, pattern = toks_col)
+
+
+stop <- Sys.time()
+print(stop - start)
+
+```
+
+```{r}
+dfm_matrix_test <- dfm(toks_test)
+dim(dfm_matrix_test)
+
+dfm_matrix_test <- dfm_trim(dfm_matrix_test, min_termfreq = 15, max_termfreq = round(length(temp_dat) * 0.07))
+dim(dfm_matrix_test)
+dfm_matrix_tm_test <- convert(dfm_matrix_test, to = 'topicmodels')
+```
