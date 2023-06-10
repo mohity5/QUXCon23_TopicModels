@@ -4,6 +4,8 @@
 
 
 ```{r-Libraries}
+update.packages(c('quanteda','quanteda.textstats','stopwords','topicmodels','topicdoc','LDAvis'))
+
 #For Text pre-processing
 library('quanteda')
 library('quanteda.textstats')
@@ -52,7 +54,8 @@ toks <- tokens(train_data,
 
 toks <- tokens_select(toks, min_nchar = 3 , selection = 'remove')
 toks <- tokens_remove(toks, stopwords(language = 'en', source = 'stopwords-iso'))
-toks <- tokens_select(toks, '-' , selection = 'remove')
+toks <- tokens_select(toks, '--+', valuetype = 'regex' , selection = 'remove')
+
 
 
 toks_col <- tokens_select(toks) %>% textstat_collocations(min_count = 100)
@@ -87,6 +90,8 @@ toks_test <- tokens(test_data,
 toks_test <- tokens_select(toks_test, min_nchar = 3 , selection = 'remove')
 toks_test <- tokens_remove(toks_test, stopwords(language = 'en', source = 'stopwords-iso'))
 toks_test <- tokens_select(toks_test, '-' , selection = 'remove')
+toks_test <- tokens_select(toks_test, '--+', valuetype = 'regex' )
+
 
 
 toks_col <- tokens_select(toks_test) %>% textstat_collocations(min_count = 100)
@@ -129,14 +134,14 @@ model_lda_20 <- readRDS('./Models/model_lda_20.rds')
 
 ```{r-ModelFitting}
 start <- Sys.time()
-model_lda_21 <- LDA(dfm_matrix_tm, 
-                    k = 21, method = 'Gibbs', 
+model_lda_22 <- LDA(dfm_matrix_tm, 
+                    k = 22, method = 'Gibbs', 
                     control = list(alpha = 0.08, burnin = 500 , verbose = 100 , seed = 1234))
 stop <- Sys.time()
 
 print(stop-start)
-saveRDS(model_lda_21,'./Models/model_lda_21.rds')
-model_lda_21 <- readRDS('./Models/model_lda_21.rds')
+saveRDS(model_lda_22,'./Models/model_lda_22.rds')
+model_lda_22 <- readRDS('./Models/model_lda_22.rds')
 ```
 
 ```{r-ModelFitting}
@@ -149,6 +154,18 @@ stop <- Sys.time()
 print(stop-start)
 saveRDS(model_lda_45,'./Models/model_lda_45.rds')
 model_lda_45 <- readRDS('./Models/model_lda_45.rds')
+```
+
+```{r-ModelFitting}
+start <- Sys.time()
+model_lda_120 <- LDA(dfm_matrix_tm, 
+                    k = 120, method = 'Gibbs', 
+                    control = list(alpha = 0.1, burnin = 500 , verbose = 100 , seed = 1234))
+stop <- Sys.time()
+
+print(stop-start)
+saveRDS(model_lda_120,'./Models/model_lda_120.rds')
+model_lda_5 <- readRDS('./Models/model_lda_120.rds')
 ```
 
 
@@ -205,6 +222,7 @@ TopicInDoc(model_lda_21,docnum,Topic2Names)
 perplexity_20 <- perplexity(model_lda_20, dfm_matrix_tm_test)
 perplexity_21 <- perplexity(model_lda_21, dfm_matrix_tm_test)
 perplexity_45 <- perplexity(model_lda_45, dfm_matrix_tm_test)
+perplexity_120 <- perplexity(model_lda_5, dfm_matrix_tm_test)
 
 #perplexity_45 <- perplexity(model_lda_45, dfm_matrix_tm_test)
 
@@ -236,8 +254,6 @@ mean(topic_diagnostics(model_lda_45,dfm_matrix_tm)$topic_coherence)
 
 jsonPrep <- function(modl, dfmm){
 
-    modl <- model_lda_21
-
     phi <- exp(modl@beta) #Topic over terms
     theta <- modl@gamma #Doc over topics
     vocab <- modl@terms
@@ -256,6 +272,6 @@ jsonPrep <- function(modl, dfmm){
 ```
 
 ```{r}
-json <- jsonPrep(model_lda_21,dfm_matrix)
+json <- jsonPrep(model_lda_20,dfm_matrix)
 serVis(json)
 ```
