@@ -290,3 +290,11 @@ jsonPrep <- function(modl, dfmm){
 json <- jsonPrep(model_lda_20,dfm_matrix)
 serVis(json)
 ```
+
+### Document Similarity
+
+```{r}
+similarity_matrix <- distHellinger(model_lda_5@gamma[1:6,])
+print(similarity_matrix)
+
+```
