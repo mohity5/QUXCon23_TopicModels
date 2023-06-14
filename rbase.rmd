@@ -1,0 +1,285 @@
+# Topic Models
+## A tool for uncovering hidden themes in data
+### QUXCon 2023
+
+```{r}
+update.packages(c('quanteda','quanteda.textstats','stopwords','topicmodels','topicdoc','LDAvis'))
+```
+
+```{r-Libraries}
+
+#For Text pre-processing
+library('quanteda')
+library('quanteda.textstats')
+library('stopwords')
+
+```
+
+### Data Loading
+```{r-ReadingData}
+df <- read.csv('./Data/lemmatised_text.csv')
+dim(df)
+
+```
+
+```{r-SplittingTestTrainData}
+train_doc_n = 0.85 * dim(df)[1]
+
+train_data <- df[0:(round(train_doc_n)-1),] 
+test_data <- df[round(train_doc_n):dim(df)[1],]
+temp_dat <- df[0:1000,]
+
+
+```
+
+
+### Pre-processing
+
+#### For training data
+
+```{r-Tokenising}
+start <- Sys.time()
+print(start)
+
+toks <- tokens(train_data,
+                remove_punct = TRUE,
+                remove_numbers = TRUE) #,split_hyphens = TRUE
+
+
+toks <- tokens_select(toks, min_nchar = 3 , selection = 'remove')
+toks <- tokens_remove(toks, stopwords(language = 'en', source = 'stopwords-iso'))
+toks <- tokens_select(toks, '--+', valuetype = 'regex' , selection = 'remove')
+
+
+
+toks_col <- tokens_select(toks) %>% textstat_collocations(min_count = 100)
+toks <- tokens_compound(toks, pattern = toks_col)
+
+
+stop <- Sys.time()
+print(stop - start)
+```
+
+```{r-DocFreqMatrix}
+dfm_matrix <- dfm(toks)
+dim(dfm_matrix)
+```
+
+```{r}
+dfm_matrix <- dfm_trim(dfm_matrix, min_termfreq = 25, max_termfreq = round(length(train_data) * 0.07))
+dim(dfm_matrix)
+#removing 0 rows from dfm
+ZeroRows <- dfm_matrix[rowSums(dfm_matrix) == 0,]
+dfm_matrix <- dfm_matrix[rowSums(dfm_matrix) != 0,]
+dim(dfm_matrix)
+dim(ZeroRows)
+
+```
+
+```{r}
+# Training data removed with 0 tokens, used later for evaluation
+df_train_processed <- train_data[-c(3973,5995,6463,8438,8468,9486,12042,13052)]
+length(df_train_processed)
+```
+
+#### For testing data
+```{r}
+start <- Sys.time()
+print(start)
+
+toks_test <- tokens(test_data,
+                remove_punct = TRUE,
+                remove_numbers = TRUE) #,split_hyphens = TRUE
+
+
+toks_test <- tokens_select(toks_test, min_nchar = 3 , selection = 'remove')
+toks_test <- tokens_remove(toks_test, stopwords(language = 'en', source = 'stopwords-iso'))
+toks_test <- tokens_select(toks_test, '-' , selection = 'remove')
+toks_test <- tokens_select(toks_test, '--+', valuetype = 'regex' )
+
+
+
+toks_col <- tokens_select(toks_test) %>% textstat_collocations(min_count = 100)
+toks_test <- tokens_compound(toks_test, pattern = toks_col)
+
+
+stop <- Sys.time()
+print(stop - start)
+
+```
+
+```{r}
+dfm_matrix_test <- dfm(toks_test)
+dim(dfm_matrix_test)
+
+dfm_matrix_test <- dfm_trim(dfm_matrix_test, min_termfreq = 15, max_termfreq = round(length(temp_dat) * 0.07))
+dim(dfm_matrix_test)
+dfm_matrix_tm_test <- convert(dfm_matrix_test, to = 'topicmodels')
+```
+
+
+### Modelling
+```{r}
+#Modelling
+library('topicmodels')
+library('topicdoc')
+```
+
+```{r}
+dfm_matrix_tm <- convert(dfm_matrix, to = 'topicmodels')
+```
+
+```{r-Modelling}
+start <- Sys.time()
+model_lda_5 <- LDA(dfm_matrix_tm, 
+                    k = 5, method = 'Gibbs', 
+                    control = list(alpha = 0.08, burnin = 500 , verbose = 100 , seed = 1234))
+stop <- Sys.time()
+
+print(stop-start)
+saveRDS(model_lda_5,'./Models/model_lda_5.rds')
+model_lda_5 <- readRDS('./Models/model_lda_5.rds')
+```
+
+
+
+```{r-Modelling}
+start <- Sys.time()
+model_lda_21 <- LDA(dfm_matrix_tm, 
+                    k = 21, method = 'Gibbs', 
+                    control = list(alpha = 0.08, burnin = 500 , verbose = 100 , seed = 1234))
+stop <- Sys.time()
+
+print(stop-start)
+saveRDS(model_lda_21,'./Models/model_lda_21.rds')
+model_lda_21 <- readRDS('./Models/model_lda_21.rds')
+```
+
+```{r-Modelling}
+start <- Sys.time()
+model_lda_45 <- LDA(dfm_matrix_tm, 
+                    k = 45, method = 'Gibbs', 
+                    control = list(alpha = 0.08, burnin = 500 , verbose = 100 , seed = 1234))
+stop <- Sys.time()
+
+print(stop-start)
+saveRDS(model_lda_45,'./Models/model_lda_45.rds')
+model_lda_45 <- readRDS('./Models/model_lda_45.rds')
+```
+
+```{r-Modelling}
+start <- Sys.time()
+model_lda_120 <- LDA(dfm_matrix_tm, 
+                    k = 120, method = 'Gibbs', 
+                    control = list(alpha = 0.1, burnin = 500 , verbose = 100 , seed = 1234))
+stop <- Sys.time()
+
+print(stop-start)
+saveRDS(model_lda_120,'./Models/model_lda_120.rds')
+model_lda_5 <- readRDS('./Models/model_lda_120.rds')
+```
+
+
+```{r-Modelling}
+start <- Sys.time()
+model_lda_21_a12 <- LDA(dfm_matrix_tm, 
+                    k = 21, method = 'Gibbs', 
+                    control = list(alpha = 1.2, burnin = 500 , verbose = 100 , seed = 1234))
+stop <- Sys.time()
+
+print(stop-start)
+saveRDS(model_lda_21_a12,'./Models/model_lda_21_a12.rds')
+model_lda_21_a12 <- readRDS('./Models/model_lda_21_a12.rds')
+```
+
+### Model Evaluation
+
+#### Word Intrusion
+```{r}
+terms(model_lda_21,10)
+Topic2Names <- c('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21')
+
+```
+
+
+#### Topic Intrusion
+
+```{r}
+TopicsInDoc <- topics(model_lda_45,3,0.1)
+
+docnum = 7572
+writeLines(df_train_processed[docnum])
+TopicsInDoc[docnum]
+```
+
+
+#### Perplexity
+
+```{r}
+
+perplexity_21 <- perplexity(model_lda_21, dfm_matrix_tm_test)
+perplexity_45 <- perplexity(model_lda_45, dfm_matrix_tm_test)
+perplexity_120 <- perplexity(model_lda_5, dfm_matrix_tm_test)
+
+
+print('Perplexity of model 21 topics is ', perplexity_21) #use theta
+print('Perplexity of model 45 topics is ', perplexity_45) #use theta
+
+```
+
+
+
+#### Coherence
+
+```{r}
+
+topic_diagnostics(model_lda_21,dfm_matrix_tm)
+topic_diagnostics(model_lda_45,dfm_matrix_tm)
+
+
+mean(topic_diagnostics(model_lda_21,dfm_matrix_tm)$topic_coherence)
+mean(topic_diagnostics(model_lda_45,dfm_matrix_tm)$topic_coherence)
+
+```
+
+### Model Visualisation
+
+```{r}
+#For visualisation
+library('LDAvis')
+
+```
+
+```{r-JSON_prep}
+
+jsonPrep <- function(modl, dfmm){
+
+    phi <- exp(modl@beta) #Topic over terms
+    theta <- modl@gamma #Doc over topics
+    vocab <- modl@terms
+
+    termFreq <- unlist(colSums(dfmm), use.names = FALSE)
+    
+    docL <- unlist(rowSums(dfmm), use.names = FALSE)
+    docL <- docL[!(docL %in% 0)]
+
+    json <- createJSON(phi,theta,docL,vocab,termFreq)
+
+    return(json)
+
+}
+
+```
+
+```{r}
+json <- jsonPrep(model_lda_21,dfm_matrix)
+serVis(json)
+```
+
+### Document Similarity
+
+```{r}
+similarity_matrix <- distHellinger(model_lda_5@gamma[1:6,])
+print(similarity_matrix)
+
+```
