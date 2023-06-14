@@ -118,9 +118,9 @@ dfm_matrix_tm_test <- convert(dfm_matrix_test, to = 'topicmodels')
 ```
 
 
-### Model Fitting
+### Modelling
 ```{r}
-#For model fitting
+#Modelling
 library('topicmodels')
 library('topicdoc')
 ```
@@ -129,7 +129,7 @@ library('topicdoc')
 dfm_matrix_tm <- convert(dfm_matrix, to = 'topicmodels')
 ```
 
-```{r-ModelFitting}
+```{r-Modelling}
 start <- Sys.time()
 model_lda_5 <- LDA(dfm_matrix_tm, 
                     k = 5, method = 'Gibbs', 
@@ -142,19 +142,8 @@ model_lda_5 <- readRDS('./Models/model_lda_5.rds')
 ```
 
 
-```{r-ModelFitting}
-start <- Sys.time()
-model_lda_20 <- LDA(dfm_matrix_tm, 
-                    k = 20, method = 'Gibbs', 
-                    control = list(alpha = 0.08, burnin = 500 , verbose = 100 , seed = 1234))
-stop <- Sys.time()
 
-print(stop-start)
-saveRDS(model_lda_20,'./Models/model_lda_20.rds')
-model_lda_20 <- readRDS('./Models/model_lda_20.rds')
-```
-
-```{r-ModelFitting}
+```{r-Modelling}
 start <- Sys.time()
 model_lda_21 <- LDA(dfm_matrix_tm, 
                     k = 21, method = 'Gibbs', 
@@ -166,7 +155,7 @@ saveRDS(model_lda_21,'./Models/model_lda_21.rds')
 model_lda_21 <- readRDS('./Models/model_lda_21.rds')
 ```
 
-```{r-ModelFitting}
+```{r-Modelling}
 start <- Sys.time()
 model_lda_45 <- LDA(dfm_matrix_tm, 
                     k = 45, method = 'Gibbs', 
@@ -178,7 +167,7 @@ saveRDS(model_lda_45,'./Models/model_lda_45.rds')
 model_lda_45 <- readRDS('./Models/model_lda_45.rds')
 ```
 
-```{r-ModelFitting}
+```{r-Modelling}
 start <- Sys.time()
 model_lda_120 <- LDA(dfm_matrix_tm, 
                     k = 120, method = 'Gibbs', 
@@ -191,7 +180,7 @@ model_lda_5 <- readRDS('./Models/model_lda_120.rds')
 ```
 
 
-```{r-ModelFitting}
+```{r-Modelling}
 start <- Sys.time()
 model_lda_21_a12 <- LDA(dfm_matrix_tm, 
                     k = 21, method = 'Gibbs', 
@@ -227,15 +216,12 @@ TopicsInDoc[docnum]
 #### Perplexity
 
 ```{r}
-#model_list <- list(model_20,model_21)
-perplexity_20 <- perplexity(model_lda_20, dfm_matrix_tm_test)
+
 perplexity_21 <- perplexity(model_lda_21, dfm_matrix_tm_test)
 perplexity_45 <- perplexity(model_lda_45, dfm_matrix_tm_test)
 perplexity_120 <- perplexity(model_lda_5, dfm_matrix_tm_test)
 
-#perplexity_45 <- perplexity(model_lda_45, dfm_matrix_tm_test)
 
-print('Perplexity of model 20 topics is ', perplexity_20) #use theta
 print('Perplexity of model 21 topics is ', perplexity_21) #use theta
 print('Perplexity of model 45 topics is ', perplexity_45) #use theta
 
@@ -246,12 +232,11 @@ print('Perplexity of model 45 topics is ', perplexity_45) #use theta
 #### Coherence
 
 ```{r}
-topic_diagnostics(model_lda_20,dfm_matrix_tm)
+
 topic_diagnostics(model_lda_21,dfm_matrix_tm)
 topic_diagnostics(model_lda_45,dfm_matrix_tm)
 
 
-mean(topic_diagnostics(model_lda_20,dfm_matrix_tm)$topic_coherence)
 mean(topic_diagnostics(model_lda_21,dfm_matrix_tm)$topic_coherence)
 mean(topic_diagnostics(model_lda_45,dfm_matrix_tm)$topic_coherence)
 
@@ -287,7 +272,7 @@ jsonPrep <- function(modl, dfmm){
 ```
 
 ```{r}
-json <- jsonPrep(model_lda_20,dfm_matrix)
+json <- jsonPrep(model_lda_21,dfm_matrix)
 serVis(json)
 ```
 
