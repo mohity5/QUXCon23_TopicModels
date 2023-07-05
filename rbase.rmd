@@ -6,15 +6,6 @@
 update.packages(c('quanteda','quanteda.textstats','stopwords','topicmodels','topicdoc','LDAvis'))
 ```
 
-```{r-Libraries}
-
-#For Text pre-processing
-library('quanteda')
-library('quanteda.textstats')
-library('stopwords')
-
-```
-
 ### Data Loading
 ```{r-ReadingData}
 df <- read.csv('./Data/lemmatised_text.csv')
@@ -34,79 +25,46 @@ temp_dat <- df[0:1000,]
 
 
 ### Pre-processing
+```{r}
+library('quanteda')
+library('quanteda.textstats')
+library('stopwords')
+```
 
 #### For training data
-
-```{r-Tokenising}
-start <- Sys.time()
-print(start)
-
-toks <- tokens(train_data,
-                remove_punct = TRUE,
-                remove_numbers = TRUE) #,split_hyphens = TRUE
-
-
-toks <- tokens_select(toks, min_nchar = 3 , selection = 'remove')
-toks <- tokens_remove(toks, stopwords(language = 'en', source = 'stopwords-iso'))
-toks <- tokens_select(toks, '--+', valuetype = 'regex' , selection = 'remove')
-
-
-
-toks_col <- tokens_select(toks) %>% textstat_collocations(min_count = 100)
-toks <- tokens_compound(toks, pattern = toks_col)
-
-
-stop <- Sys.time()
-print(stop - start)
+```{r- PreProcess}
+source('./Modules/R/rTokenising.r')
+toks <- preProcess(train_data)
 ```
 
 ```{r-DocFreqMatrix}
 dfm_matrix <- dfm(toks)
 dim(dfm_matrix)
-```
 
-```{r}
 dfm_matrix <- dfm_trim(dfm_matrix, min_termfreq = 25, max_termfreq = round(length(train_data) * 0.07))
 dim(dfm_matrix)
-#removing 0 rows from dfm
-ZeroRows <- dfm_matrix[rowSums(dfm_matrix) == 0,]
-dfm_matrix <- dfm_matrix[rowSums(dfm_matrix) != 0,]
-dim(dfm_matrix)
-dim(ZeroRows)
-
 ```
+
 
 ```{r}
-# Training data removed with 0 tokens, used later for evaluation
-df_train_processed <- train_data[-c(3973,5995,6463,8438,8468,9486,12042,13052)]
-length(df_train_processed)
+# Removing zero rows after preprocessing
+source('./Modules/R/zeroRows.r')
+
+ZeroRowDfm <- dfm_matrix[rowSums(dfm_matrix) == 0,]
+dfm_matrix <- dfm_matrix[rowSums(dfm_matrix) != 0,]
+
+zeroIndex <- zeroRowIndex(ZeroRowDfm)
+
+train_data_processed <- train_data[-c(zeroIndex)]
+
 ```
+
 
 #### For testing data
-```{r}
-start <- Sys.time()
-print(start)
-
-toks_test <- tokens(test_data,
-                remove_punct = TRUE,
-                remove_numbers = TRUE) #,split_hyphens = TRUE
-
-
-toks_test <- tokens_select(toks_test, min_nchar = 3 , selection = 'remove')
-toks_test <- tokens_remove(toks_test, stopwords(language = 'en', source = 'stopwords-iso'))
-toks_test <- tokens_select(toks_test, '-' , selection = 'remove')
-toks_test <- tokens_select(toks_test, '--+', valuetype = 'regex' )
-
-
-
-toks_col <- tokens_select(toks_test) %>% textstat_collocations(min_count = 100)
-toks_test <- tokens_compound(toks_test, pattern = toks_col)
-
-
-stop <- Sys.time()
-print(stop - start)
-
+```{r- PreProcess}
+toks_test <- preProcess(test_data)
 ```
+
 
 ```{r}
 dfm_matrix_test <- dfm(toks_test)
@@ -114,7 +72,17 @@ dim(dfm_matrix_test)
 
 dfm_matrix_test <- dfm_trim(dfm_matrix_test, min_termfreq = 15, max_termfreq = round(length(temp_dat) * 0.07))
 dim(dfm_matrix_test)
-dfm_matrix_tm_test <- convert(dfm_matrix_test, to = 'topicmodels')
+```
+
+```{r}
+# Removing zero rows after preprocessing
+
+ZeroRowDfm_test <- dfm_matrix_test[rowSums(dfm_matrix_test) == 0,]
+dfm_matrix_test <- dfm_matrix_test[rowSums(dfm_matrix_test) != 0,]
+
+zeroIndex_test <- zeroRowIndex(ZeroRowDfm_test)
+test_data_processed <- test_data[-c(zeroIndex_test)]
+
 ```
 
 
@@ -127,10 +95,12 @@ library('topicdoc')
 
 ```{r}
 dfm_matrix_tm <- convert(dfm_matrix, to = 'topicmodels')
+dfm_matrix_tm_test <- convert(dfm_matrix_test, to = 'topicmodels')
 ```
 
 ```{r-Modelling}
 start <- Sys.time()
+
 model_lda_5 <- LDA(dfm_matrix_tm, 
                     k = 5, method = 'Gibbs', 
                     control = list(alpha = 0.08, burnin = 500 , verbose = 100 , seed = 1234))
@@ -140,8 +110,6 @@ print(stop-start)
 saveRDS(model_lda_5,'./Models/model_lda_5.rds')
 model_lda_5 <- readRDS('./Models/model_lda_5.rds')
 ```
-
-
 
 ```{r-Modelling}
 start <- Sys.time()
@@ -176,9 +144,8 @@ stop <- Sys.time()
 
 print(stop-start)
 saveRDS(model_lda_120,'./Models/model_lda_120.rds')
-model_lda_5 <- readRDS('./Models/model_lda_120.rds')
+model_lda_120 <- readRDS('./Models/model_lda_120.rds')
 ```
-
 
 ```{r-Modelling}
 start <- Sys.time()
@@ -201,36 +168,26 @@ Topic2Names <- c('1','2','3','4','5','6','7','8','9','10','11','12','13','14','1
 
 ```
 
-
 #### Topic Intrusion
 
 ```{r}
-TopicsInDoc <- topics(model_lda_45,3,0.1)
+TopicsInDoc <- topics(model_lda_21,3,0.1)
 
-docnum = 7572
-writeLines(df_train_processed[docnum])
+docnum = 8000
+writeLines(train_data_processed[docnum])
 TopicsInDoc[docnum]
 ```
 
-
 #### Perplexity
-
 ```{r}
 
 perplexity_21 <- perplexity(model_lda_21, dfm_matrix_tm_test)
 perplexity_45 <- perplexity(model_lda_45, dfm_matrix_tm_test)
-perplexity_120 <- perplexity(model_lda_5, dfm_matrix_tm_test)
-
-
-print('Perplexity of model 21 topics is ', perplexity_21) #use theta
-print('Perplexity of model 45 topics is ', perplexity_45) #use theta
+perplexity_120 <- perplexity(model_lda_120, dfm_matrix_tm_test)
 
 ```
 
-
-
 #### Coherence
-
 ```{r}
 
 topic_diagnostics(model_lda_21,dfm_matrix_tm)
@@ -247,31 +204,10 @@ mean(topic_diagnostics(model_lda_45,dfm_matrix_tm)$topic_coherence)
 ```{r}
 #For visualisation
 library('LDAvis')
-
-```
-
-```{r-JSON_prep}
-
-jsonPrep <- function(modl, dfmm){
-
-    phi <- exp(modl@beta) #Topic over terms
-    theta <- modl@gamma #Doc over topics
-    vocab <- modl@terms
-
-    termFreq <- unlist(colSums(dfmm), use.names = FALSE)
-    
-    docL <- unlist(rowSums(dfmm), use.names = FALSE)
-    docL <- docL[!(docL %in% 0)]
-
-    json <- createJSON(phi,theta,docL,vocab,termFreq)
-
-    return(json)
-
-}
-
 ```
 
 ```{r}
+source('./Modules/R/CreateJsonObj.r')
 json <- jsonPrep(model_lda_21,dfm_matrix)
 serVis(json)
 ```
